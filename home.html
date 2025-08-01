@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Impossible Sign-Up</title>
+    <!-- Tailwind CSS CDN for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Use a nice, clean font */
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Custom styles for the roulette wheel */
+        .roulette-container {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .roulette-wheel {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: #e5e7eb;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border: 5px solid #d1d5db;
+        }
+        .roulette-marker {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #ef4444;
+            z-index: 10;
+        }
+        .roulette-numbers {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 3s cubic-bezier(0.1, 0.9, 0.2, 1);
+            transform: rotate(0deg);
+        }
+        .roulette-number {
+            position: absolute;
+            top: 45%;
+            left: 46%;
+            transform-origin: center center;
+            transform: rotate(calc(var(--angle) * 1deg)) translateY(-60px) rotate(calc(var(--angle) * -1deg));
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: #4b5563;
+            width: 1.5em;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        /* Make year numbers extra small and use a different font */
+        #yearWheel .roulette-number {
+            position: absolute;
+            top: 47%;
+            left: 46%;
+            font-size: 0.25rem;
+            font-family: 'Courier New', Courier, monospace;
+            color: #4b5563;
+        }
+
+        .roulette-spin-button {
+            margin-top: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .roulette-spin-button:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        /* Custom styles for the message box */
+        #messageBox {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 50;
+            background-color: #fff;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+            display: none;
+        }
+
+        /* Custom animations for buttons */
+        .btn-fancy {
+            transition: all 0.3s ease;
+            transform: scale(1);
+        }
+        .btn-fancy:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .btn-fancy:active {
+            transform: scale(0.98) translateY(1px);
+        }
+
+        /* For the password validation section */
+        .validation-item {
+            transition: color 0.3s, text-decoration 0.3s;
+        }
+        .validation-item.passed {
+            color: #22c55e;
+            text-decoration: line-through;
+        }
+
+        /* For the Terms & Conditions */
+        .terms-box {
+            height: 150px;
+            overflow-y: scroll;
+            line-height: 1.25;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-500 to-purple-600 p-8">
+
+    <!-- The main sign-up container -->
+    <div class="bg-white p-8 md:p-12 rounded-3xl shadow-2xl max-w-4xl w-full">
+        <h1 class="text-4xl md:text-5xl font-bold text-center text-gray-800 mb-8">The Impossible Sign-Up</h1>
+
+        <form id="signupForm" class="space-y-6">
+            <!-- Username field with a ridiculous rule -->
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <input type="text" id="username" name="username" placeholder="Must contain a 🦄" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-lg">
+                </div>
+                <p class="mt-2 text-sm text-gray-500">Your username must contain the unicorn emoji (🦄).</p>
+            </div>
+
+            <!-- Password field with absurd rules -->
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <input type="password" id="password" name="password" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-lg">
+                </div>
+                <div class="mt-4 p-4 bg-gray-100 rounded-xl">
+                    <h3 class="text-md font-semibold text-gray-700 mb-2">Password Requirements:</h3>
+                    <ul class="space-y-1 text-sm text-gray-600">
+                        <li id="req-length" class="validation-item">
+                            <span class="text-red-500">❌</span> At least 16 characters long.
+                        </li>
+                        <li id="req-alpha" class="validation-item">
+                            <span class="text-red-500">❌</span> Must contain alphanumeric characters (A-Z, a-z, 0-9).
+                        </li>
+                        <li id="req-symbol" class="validation-item">
+                            <span class="text-red-500">❌</span> Must contain at least 4 unique symbols (e.g., @!#$%^).
+                        </li>
+                        <li id="req-sum" class="validation-item">
+                            <span class="text-red-500">❌</span> The sum of all digits must equal <span id="password-sum-req" class="font-bold text-gray-800"></span>.
+                        </li>
+                        <li id="req-phrase" class="validation-item">
+                            <span class="text-red-500">❌</span> Must contain the phrase "gemini" spelled backward ("inimeg").
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Date of Birth with a roulette wheel -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 items-center">
+                    <!-- Day Wheel -->
+                    <div class="roulette-container">
+                        <div id="dayWheel" class="roulette-wheel">
+                            <div class="roulette-marker"></div>
+                            <div class="roulette-numbers"></div>
+                        </div>
+                        <button type="button" class="roulette-spin-button bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full shadow-lg">
+                            Spin Day
+                        </button>
+                    </div>
+
+                    <!-- Month Wheel -->
+                    <div class="roulette-container">
+                        <div id="monthWheel" class="roulette-wheel">
+                            <div class="roulette-marker"></div>
+                            <div class="roulette-numbers"></div>
+                        </div>
+                        <button type="button" class="roulette-spin-button bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full shadow-lg">
+                            Spin Month
+                        </button>
+                    </div>
+
+                    <!-- Year Wheel -->
+                    <div class="roulette-container">
+                        <div id="yearWheel" class="roulette-wheel">
+                            <div class="roulette-marker"></div>
+                            <div class="roulette-numbers"></div>
+                        </div>
+                        <button type="button" class="roulette-spin-button bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full shadow-lg">
+                            Spin Year
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-4 text-center text-lg font-bold text-gray-800">
+                    Your Date: <span id="dob-display" class="font-normal text-gray-600">--/--/----</span>
+                </div>
+                <input type="hidden" id="dobInput" name="dob" required>
+            </div>
+
+            <!-- Ridiculous CAPTCHA -->
+            <div>
+                <label for="captcha" class="block text-sm font-medium text-gray-700 mb-2">
+                    Solve this CAPTCHA
+                </label>
+                <div class="flex items-center space-x-2">
+                    <span id="captchaQuestion" class="text-2xl font-mono p-2 bg-gray-100 rounded-lg"></span>
+                    <input type="number" id="captcha" name="captcha" required
+                           class="w-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 text-lg">
+                </div>
+            </div>
+
+            <!-- Absurd Terms and Conditions -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Terms and Conditions
+                </label>
+                <div class="terms-box p-4 bg-gray-100 rounded-xl border border-gray-200 text-sm text-gray-600">
+                    <p>
+                        WHEREAS, the User acknowledges that by proceeding with this registration, they are entering into a legally binding, though existentially absurd, contract with the Digital Consortium of Interdimensional Bureaucracy (herein referred to as the "D.C.I.B."); and
+                        WHEREAS, the User agrees to relinquish all claims to their personal, emotional, and temporal sovereignty for the duration of their digital existence, which is hereby defined as "until such time as the D.C.I.B. decides otherwise, or until a particularly strong solar flare erases the server data, whichever comes first"; and
+                        WHEREAS, the User shall not, under any circumstances, attempt to decipher, comprehend, or otherwise make sense of the password requirements, as doing so is strictly prohibited and may result in the immediate and irreversible conversion of their digital avatar into a sentient, though eternally sad, potato; and
+                        WHEREAS, any and all complaints, grievances, or cries for help shall be directed to the designated complaint department, which is located on a small, uninhabited moon orbiting a distant gas giant, and can only be accessed by submitting a haiku composed entirely of palindromes; and
+                        WHEREAS, the User's date of birth, as determined by the Roul-Date-O-Matic 5000, is to be considered the User's new, official, and cosmically-ordained birthday, regardless of any previously held beliefs or records; and
+                        WHEREAS, the D.C.I.B. reserves the right to change these terms and conditions at any time, for any reason, without notice, and with the full expectation that the User will accept them without question, because, let's be honest, you're not going to read all this anyway. By clicking "Sign Up," you agree to all of the above and more.
+                    </p>
+                </div>
+                <div class="mt-2 flex items-center">
+                    <input type="checkbox" id="agreeTerms" name="agreeTerms" required
+                           class="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                    <label for="agreeTerms" class="ml-2 block text-sm text-gray-900">
+                        I have read and inexplicably agreed to the terms.
+                    </label>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-center mt-8">
+                <button type="submit" id="submitButton"
+                        class="btn-fancy w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-green-400 to-blue-500 hover:from-pink-500 hover:to-yellow-500 text-white font-bold rounded-full shadow-lg transition-all duration-300 transform-gpu">
+                    Sign Up Now (If You Dare)
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Custom Message Box for alerts -->
+    <div id="messageBox" class="hidden">
+        <div class="text-3xl font-bold mb-4 text-gray-800" id="messageTitle"></div>
+        <div class="text-gray-600 mb-6" id="messageText"></div>
+        <button onclick="document.getElementById('messageBox').style.display='none';"
+                class="bg-purple-500 text-white px-6 py-2 rounded-full hover:bg-purple-600 transition-colors">
+            Close
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Random Password Sum & Captcha Generation ---
+            const passwordSumReq = Math.floor(Math.random() * 50) + 10;
+            document.getElementById('password-sum-req').textContent = passwordSumReq;
+
+            const captchaQuestion = document.getElementById('captchaQuestion');
+
+            // Generate a more complex Oxford-style math problem
+            function generateOxfordCaptcha() {
+                // Example: (a + b) × c - d^2
+                const a = Math.floor(Math.random() * 10) + 1;
+                const b = Math.floor(Math.random() * 10) + 1;
+                const c = Math.floor(Math.random() * 5) + 2;
+                const d = Math.floor(Math.random() * 4) + 1;
+                const question = `(${a} + ${b}) × ${c} - ${d}² = ?`;
+                const answer = (a + b) * c - Math.pow(d, 2);
+                return { question, answer };
+            }
+
+            const captchaObj = generateOxfordCaptcha();
+            let captchaAnswer = captchaObj.answer;
+            captchaQuestion.textContent = captchaObj.question;
+
+            // --- Password Validation Logic ---
+            const passwordInput = document.getElementById('password');
+            const reqLength = document.getElementById('req-length');
+            const reqAlpha = document.getElementById('req-alpha');
+            const reqSymbol = document.getElementById('req-symbol');
+            const reqSum = document.getElementById('req-sum');
+            const reqPhrase = document.getElementById('req-phrase');
+
+            const updateValidation = () => {
+                const password = passwordInput.value;
+                const setRuleStatus = (element, condition) => {
+                    if (condition) {
+                        element.classList.add('passed');
+                        element.querySelector('span').textContent = '✅';
+                        element.querySelector('span').classList.remove('text-red-500');
+                    } else {
+                        element.classList.remove('passed');
+                        element.querySelector('span').textContent = '❌';
+                        element.querySelector('span').classList.add('text-red-500');
+                    }
+                };
+
+                // Rule 1: Length
+                setRuleStatus(reqLength, password.length >= 16);
+
+                // Rule 2: Alphanumeric
+                setRuleStatus(reqAlpha, /[a-zA-Z]/.test(password) && /\d/.test(password));
+
+                // Rule 3: Unique Symbols
+                const symbols = password.match(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/g) || [];
+                const uniqueSymbols = new Set(symbols);
+                setRuleStatus(reqSymbol, uniqueSymbols.size >= 4);
+
+                // Rule 4: Sum of Digits
+                const digits = password.match(/\d/g) || [];
+                const sum = digits.reduce((acc, digit) => acc + parseInt(digit, 10), 0);
+                setRuleStatus(reqSum, sum === passwordSumReq);
+
+                // Rule 5: Reverse Phrase
+                setRuleStatus(reqPhrase, password.includes('inimeg'));
+            };
+
+            passwordInput.addEventListener('input', updateValidation);
+
+            // --- Roulette Wheel Logic ---
+            const createRouletteWheel = (wheelId, numbers) => {
+                const wheel = document.getElementById(wheelId);
+                const numbersContainer = wheel.querySelector('.roulette-numbers');
+                const spinButton = wheel.nextElementSibling;
+                let spinning = false;
+
+                numbers.forEach((num, index) => {
+                    const numberEl = document.createElement('div');
+                    numberEl.textContent = num;
+                    numberEl.className = 'roulette-number';
+                    numberEl.style.setProperty('--angle', (360 / numbers.length) * index);
+                    numbersContainer.appendChild(numberEl);
+                });
+
+                const spin = () => {
+                    if (spinning) return;
+                    spinning = true;
+                    spinButton.disabled = true;
+                    const randomDegrees = Math.floor(Math.random() * 360) + 1440; // 4+ full spins
+                    numbersContainer.style.transform = `rotate(${randomDegrees}deg)`;
+
+                    setTimeout(() => {
+                        spinning = false;
+                        spinButton.disabled = false;
+                        const finalRotation = randomDegrees % 360;
+                        const numberIndex = Math.floor((360 - finalRotation) / (360 / numbers.length));
+                        const selectedNumber = numbers[numberIndex];
+                        updateDOB(wheelId, selectedNumber);
+                    }, 3000); // Wait for the spin animation to finish
+                };
+                spinButton.addEventListener('click', spin);
+            };
+
+            const dayNumbers = Array.from({ length: 31 }, (_, i) => i + 1);
+            const monthNumbers = Array.from({ length: 12 }, (_, i) => i + 1);
+            const yearNumbers = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
+
+            createRouletteWheel('dayWheel', dayNumbers);
+            createRouletteWheel('monthWheel', monthNumbers);
+            createRouletteWheel('yearWheel', yearNumbers);
+
+            let dob = { day: null, month: null, year: null };
+            const dobDisplay = document.getElementById('dob-display');
+            const dobInput = document.getElementById('dobInput');
+
+            const updateDOB = (wheelId, value) => {
+                if (wheelId.includes('day')) dob.day = value;
+                if (wheelId.includes('month')) dob.month = value;
+                if (wheelId.includes('year')) dob.year = value;
+
+                const dayStr = dob.day ? String(dob.day).padStart(2, '0') : '--';
+                const monthStr = dob.month ? String(dob.month).padStart(2, '0') : '--';
+                const yearStr = dob.year ? String(dob.year) : '----';
+                dobDisplay.textContent = `${monthStr}/${dayStr}/${yearStr}`;
+
+                if (dob.day && dob.month && dob.year) {
+                    dobInput.value = `${dob.year}-${dob.month}-${dob.day}`;
+                }
+            };
+
+            // --- Form Submission Logic ---
+            const form = document.getElementById('signupForm');
+            const showMessage = (title, text) => {
+                const messageBox = document.getElementById('messageBox');
+                document.getElementById('messageTitle').textContent = title;
+                document.getElementById('messageText').textContent = text;
+                messageBox.style.display = 'block';
+            };
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                // Check all validation rules
+                const isUsernameValid = document.getElementById('username').value.includes('🦄');
+                const isPasswordValid = Array.from(document.querySelectorAll('#password ~ div li')).every(li => li.classList.contains('passed'));
+                const isDOBValid = dob.day && dob.month && dob.year;
+                const isCaptchaValid = parseInt(document.getElementById('captcha').value, 10) === captchaAnswer;
+                const hasAgreed = document.getElementById('agreeTerms').checked;
+
+                if (!isUsernameValid) {
+                    showMessage('Whoops!', 'Your username must contain a 🦄 emoji.');
+                } else if (!isPasswordValid) {
+                    showMessage('Password Failed', 'You have not met all the impossible password requirements.');
+                } else if (!isDOBValid) {
+                    showMessage('Date of Birth Missing', 'Please spin the roulette wheels to select your date of birth.');
+                } else if (!isCaptchaValid) {
+                    showMessage('Incorrect CAPTCHA', 'The answer to the math problem is incorrect.');
+                } else if (!hasAgreed) {
+                    showMessage('Terms Not Accepted', 'You must agree to the ridiculous terms and conditions.');
+                } else {
+                    showMessage('Congratulations!', 'You have successfully navigated the digital gauntlet! You are now signed up for something... probably.');
+                    form.reset();
+                    // Reset validation and DOB display
+                    document.querySelectorAll('.validation-item').forEach(el => {
+                        el.classList.remove('passed');
+                        el.querySelector('span').textContent = '❌';
+                        el.querySelector('span').classList.add('text-red-500');
+                    });
+                    dob = { day: null, month: null, year: null };
+                    dobDisplay.textContent = '--/--/----';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
